@@ -1,4 +1,4 @@
-package com.example.kotlin_practice.domain.feed.presentation.dto
+package com.example.kotlin_practice.domain.feed.presentation.dto.request
 
 import jakarta.validation.constraints.NotBlank
 import jakarta.validation.constraints.Size
