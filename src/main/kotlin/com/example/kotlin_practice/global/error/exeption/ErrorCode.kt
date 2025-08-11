@@ -7,6 +7,9 @@ enum class ErrorCode(
     val status: Int,
     val message: String
 ) {
+    //user
+    USER_NOT_FOUND(404, "User not found"),
+
     //feed
     FEED_NOT_FOUND(404, "Feed not found"),
 
