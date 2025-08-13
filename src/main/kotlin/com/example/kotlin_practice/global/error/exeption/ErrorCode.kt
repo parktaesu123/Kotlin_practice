@@ -11,6 +11,7 @@ enum class ErrorCode(
     EXPIRED_TOKEN(401, "만료된 토큰입니다."),
     INVALID_TOKEN(401, "검증 되지 않은 토큰 입니다."),
     PASSWORD_MISMATCH(401, "비밀번호가 일치하지 않습니다"),
+    REFRESH_TOKEN_NOT_FOUND(404, "일치 하는 RefreshToken이 존재 하지 않습니다."),
 
     //user
     USER_NOT_FOUND(404, "User not found"),
