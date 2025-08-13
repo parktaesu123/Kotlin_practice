@@ -11,7 +11,7 @@ import com.example.kotlin_practice.global.security.auth.CustomUserDetailsService
 import io.jsonwebtoken.Claims
 import io.jsonwebtoken.ExpiredJwtException
 import io.jsonwebtoken.Jwts
-import io.jsonwebtoken.SignatureAlgorithm
+import io.jsonwebtoken.security.Keys
 import jakarta.servlet.http.HttpServletRequest
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken
 import org.springframework.security.core.Authentication
@@ -19,6 +19,8 @@ import org.springframework.security.core.userdetails.UserDetails
 import org.springframework.stereotype.Component
 import org.springframework.transaction.annotation.Transactional
 import org.springframework.util.StringUtils
+import java.nio.charset.StandardCharsets
+import java.security.Key
 import java.util.*
 
 
@@ -29,6 +31,12 @@ class JwtTokenProvider(
     private val customUserDetailsService: CustomUserDetailsService,
     private val refreshTokenRepository: RefreshTokenRepository
 ) {
+    private val secretKey: Key = try {
+        Keys.hmacShaKeyFor(Base64.getDecoder().decode(jwtProperties.secretKey))
+    } catch (e: IllegalArgumentException) {
+        Keys.hmacShaKeyFor(jwtProperties.secretKey.toByteArray(StandardCharsets.UTF_8))
+    }
+
     fun createAccessToken(accountId: String): String {
         val now = Date()
         return Jwts.builder()
@@ -36,7 +44,7 @@ class JwtTokenProvider(
             .claim("type", "access")
             .setIssuedAt(now)
             .setExpiration(Date(now.time + jwtProperties.accessExpiration * 1000))
-            .signWith(SignatureAlgorithm.HS512, jwtProperties.secretKey)
+            .signWith(secretKey)
             .compact()
     }
 
@@ -47,17 +55,16 @@ class JwtTokenProvider(
             .claim("type", "refresh")
             .setIssuedAt(now)
             .setExpiration(Date(now.time + jwtProperties.refreshExpiration * 1000))
-            .signWith(SignatureAlgorithm.HS512, jwtProperties.secretKey)
+            .signWith(secretKey)
             .compact()
 
-        // Kotlin 스타일 생성자 사용
-        val entity = RefreshToken(
-            accountId = accountId,
-            token = refreshToken,
-            timeToLive = jwtProperties.refreshExpiration
+        refreshTokenRepository.save(
+            RefreshToken(
+                accountId = accountId,
+                token = refreshToken,
+                timeToLive = jwtProperties.refreshExpiration
+            )
         )
-        refreshTokenRepository.save(entity)
-
         return refreshToken
     }
 
@@ -70,8 +77,9 @@ class JwtTokenProvider(
 
     fun getClaims(token: String): Claims =
         try {
-            Jwts.parser()
-                .setSigningKey(jwtProperties.secretKey)
+            Jwts.parserBuilder()
+                .setSigningKey(secretKey)
+                .build()
                 .parseClaimsJws(token)
                 .body
         } catch (e: ExpiredJwtException) {
