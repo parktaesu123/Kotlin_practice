@@ -29,7 +29,7 @@ jwt:
   prefix: Bearer
   accessExpiration: 3600
   refreshExpiration: 604800
-  secretKey: ${JWT_SECRET_KEY}
+  secretKey: ${JWT_SECRET_KEY:c2VjcmV0X2tleV9sb25nX2Vub3VnaF9mb3Jfanl3dF9zaWduaW5nX2tleV8xMjM0NTY=}
 
   logging:
     level:
