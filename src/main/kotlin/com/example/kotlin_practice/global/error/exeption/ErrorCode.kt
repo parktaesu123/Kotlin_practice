@@ -7,6 +7,9 @@ enum class ErrorCode(
     val status: Int,
     val message: String
 ) {
+    //jwt
+    EXPIRED_TOKEN(401, "만료된 토큰입니다."),
+
     //user
     USER_NOT_FOUND(404, "User not found"),
 
