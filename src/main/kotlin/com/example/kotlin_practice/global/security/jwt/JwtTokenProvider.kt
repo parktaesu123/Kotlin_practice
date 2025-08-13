@@ -31,32 +31,36 @@ class JwtTokenProvider(
     private val customUserDetailsService: CustomUserDetailsService,
     private val refreshTokenRepository: RefreshTokenRepository
 ) {
+    companion object {
+        private const val TYPE_CLAIM = "type"
+        private const val ACCESS_TYPE = "access"
+        private const val REFRESH_TYPE = "refresh"
+        private const val MILLISECONDS = 1000
+    }
+
     private val secretKey: Key = try {
         Keys.hmacShaKeyFor(Base64.getDecoder().decode(jwtProperties.secretKey))
     } catch (e: IllegalArgumentException) {
         Keys.hmacShaKeyFor(jwtProperties.secretKey.toByteArray(StandardCharsets.UTF_8))
     }
 
-    fun createAccessToken(accountId: String): String {
+    private fun generateToken(accountId: String, type: String, expirationSeconds: Long): String {
         val now = Date()
         return Jwts.builder()
             .setSubject(accountId)
-            .claim("type", "access")
+            .claim(TYPE_CLAIM, type)
             .setIssuedAt(now)
-            .setExpiration(Date(now.time + jwtProperties.accessExpiration * 1000))
+            .setExpiration(Date(now.time + expirationSeconds * MILLISECONDS))
             .signWith(secretKey)
             .compact()
     }
 
+    fun createAccessToken(accountId: String): String =
+        generateToken(accountId, ACCESS_TYPE, jwtProperties.accessExpiration)
+
     @Transactional
     fun createRefreshToken(accountId: String): String {
-        val now = Date()
-        val refreshToken = Jwts.builder()
-            .claim("type", "refresh")
-            .setIssuedAt(now)
-            .setExpiration(Date(now.time + jwtProperties.refreshExpiration * 1000))
-            .signWith(secretKey)
-            .compact()
+        val refreshToken = generateToken(accountId, REFRESH_TYPE, jwtProperties.refreshExpiration)
 
         refreshTokenRepository.save(
             RefreshToken(
@@ -97,8 +101,8 @@ class JwtTokenProvider(
         return TokenResponse(
             accessToken = createAccessToken(accountId),
             refreshToken = createRefreshToken(accountId),
-            accessExpiredAt = now.time + jwtProperties.accessExpiration * 1000,
-            refreshExpiredAt = now.time + jwtProperties.refreshExpiration * 1000
+            accessExpiredAt = now.time + jwtProperties.accessExpiration * MILLISECONDS,
+            refreshExpiredAt = now.time + jwtProperties.refreshExpiration * MILLISECONDS
         )
     }
 
