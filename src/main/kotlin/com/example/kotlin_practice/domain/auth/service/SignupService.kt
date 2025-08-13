@@ -14,7 +14,6 @@ class SignupService(
     fun execute(request: SignupRequest) {
         userRepository.save(
             User(
-                id = 0,
                 accountId = request.accountId,
                 password = passwordEncoder.encode(request.password),
                 userName = request.userName
